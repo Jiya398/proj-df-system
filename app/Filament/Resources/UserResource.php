@@ -5,6 +5,11 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\UserResource\Pages;
 use App\Filament\Resources\UserResource\RelationManagers;
 use App\Models\User;
+use Faker\Provider\Person;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Section;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -16,7 +21,7 @@ class UserResource extends Resource
 {
     protected static ?string $model = User::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-s-users';
 
     protected static ?string $navigationGroup = 'User Management';
 
@@ -24,18 +29,47 @@ class UserResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('name')
-                    ->required()
-                    ->maxLength(255),
-                Forms\Components\TextInput::make('email')
-                    ->email()
-                    ->required()
-                    ->maxLength(255),
-                Forms\Components\DateTimePicker::make('email_verified_at'),
-                Forms\Components\TextInput::make('password')
-                    ->password()
-                    ->required()
-                    ->maxLength(255),
+                Section::make('User Information')
+                    ->collapsible()
+                    ->columns(6)
+                    ->schema([
+                        Forms\Components\TextInput::make('first_name')
+                            ->required()
+                            ->columnSpan(2)
+                            ->maxLength(255),
+
+                        Forms\Components\TextInput::make('middle_name')
+                            ->columnSpan(2)
+                            ->maxLength(255),
+
+                        Forms\Components\TextInput::make('last_name')
+                            ->required()
+                            ->columnSpan(2)
+                            ->maxLength(255),
+
+                        Forms\Components\TextInput::make('display_name')
+                            ->columnSpanFull()
+                            ->maxLength(255),
+
+                        Forms\Components\TextInput::make('email')
+                            ->columnSpan(3)
+                            ->required()
+                            ->email()
+                            ->unique()
+                            ->maxLength(255),
+
+                        Forms\Components\Select::make('gender')
+                            ->options([
+                                ucfirst(Person::GENDER_MALE) => ucfirst(Person::GENDER_MALE),
+                                ucfirst(Person::GENDER_FEMALE) => ucfirst(Person::GENDER_FEMALE)
+                            ])
+                            ->columnSpan(3),
+
+                        Forms\Components\TextInput::make('password')
+                            ->required()
+                            ->columnSpan(3)
+                            ->maxLength(255),
+                    ])
             ]);
     }
 
@@ -43,27 +77,24 @@ class UserResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('name')
+                Tables\Columns\TextColumn::make('display_name')
+                    ->sortable()
                     ->searchable(),
                 Tables\Columns\TextColumn::make('email')
+                    ->sortable()
                     ->searchable(),
-                Tables\Columns\TextColumn::make('email_verified_at')
-                    ->dateTime()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('created_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('updated_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 Tables\Filters\TrashedFilter::make(),
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\ActionGroup::make([
+                    Tables\Actions\ActionGroup::make([
+                        Tables\Actions\ViewAction::make(),
+                        Tables\Actions\EditAction::make(),
+                    ])->dropdown(false),
+                    Tables\Actions\DeleteAction::make(),
+                ]),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
